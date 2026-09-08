@@ -52,6 +52,17 @@ def create_demo():
         padding-right: 6px;
     }
     
+    /* tab7 라벨링: 사이드바만 독립 스크롤, 캔버스는 화면에 고정된 느낌 유지 */
+    #tab7-sidebar-col {
+        max-height: 90vh;
+        overflow-y: auto;
+        position: sticky;
+        top: 10px;
+    }
+    #tab7-canvas-col {
+        position: sticky;
+        top: 10px;
+    }
     """) as demo:
         with gr.Tabs():
             build_tab1_viewer()

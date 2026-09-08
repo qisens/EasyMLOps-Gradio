@@ -230,8 +230,8 @@ window.js_editor = function (p) {
 
         if (window.add_mode) {
             const rect = canvas.getBoundingClientRect();
-            const mx = e.clientX - rect.left;
-            const my = e.clientY - rect.top;
+            const mx = (e.clientX - rect.left) / window.canvas_scale;
+            const my = (e.clientY - rect.top) / window.canvas_scale;
 
             // 🟢 현재 상태를 history에 저장해야 ctrl+Z가 작동함
             window.history_stack.push(JSON.stringify({
@@ -255,14 +255,14 @@ window.js_editor = function (p) {
         window.redo_stack = [];
 
         const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
+        const mx = (e.clientX - rect.left) / window.canvas_scale;
+  	    const my = (e.clientY - rect.top) / window.canvas_scale;
 
         //🟥클릭 시 폴리곤 선택(수정키 없이)
         if (!e.ctrlKey && !e.shiftKey && !e.altKey) {
             const rect = canvas.getBoundingClientRect();
-            const mx = e.clientX - rect.left;
-            const my = e.clientY - rect.top;
+ 	        const mx = (e.clientX - rect.left) / window.canvas_scale;
+            const my = (e.clientY - rect.top) / window.canvas_scale;
 
             const pidx = findPolyIndexAt(mx, my);
             // 선택된 폴리곤 저장
@@ -288,7 +288,8 @@ window.js_editor = function (p) {
                     // undo 저장
                     window.history_stack.push(JSON.stringify({
                         pts_list: window.pts_list,
-                        new_polygon: window.new_polygon
+                        new_polygon: window.new_polygon,
+                        add_mode: window.add_mode
                     }));
                     window.redo_stack = [];
 
@@ -303,7 +304,11 @@ window.js_editor = function (p) {
                 obj.pts.forEach((pt, idx) => {
                     if (Math.hypot(pt.x - mx, pt.y - my) < 10) {
                         // Undo 기록
-                        window.history_stack.push(JSON.stringify(window.pts_list));
+                        window.history_stack.push(JSON.stringify({
+                            pts_list: window.pts_list,
+                            new_polygon: window.new_polygon,
+                            add_mode: window.add_mode
+                        }));
                         window.redo_stack = [];
 
                         obj.pts.splice(idx, 1);
@@ -393,8 +398,8 @@ window.js_editor = function (p) {
 
         if (e.shiftKey) {
             const rect = canvas.getBoundingClientRect();
-            const mx = e.clientX - rect.left;
-            const my = e.clientY - rect.top;
+            const mx = (e.clientX - rect.left) / window.canvas_scale;
+            const my = (e.clientY - rect.top) / window.canvas_scale;
             // ★ 클릭 지점 기록
             window.debug_click = { x: mx, y: my };
 
@@ -413,7 +418,11 @@ window.js_editor = function (p) {
        // threshold 조건
 
         if (edgeInfo.dist < 10) {
-            window.history_stack.push(JSON.stringify(window.pts_list));
+            window.history_stack.push(JSON.stringify({
+                pts_list: window.pts_list,
+                new_polygon: window.new_polygon,
+                add_mode: window.add_mode
+            }));
             window.redo_stack = [];
 
             targetPoly.pts.splice(edgeInfo.index + 1, 0, { x: mx, y: my });
@@ -432,9 +441,56 @@ window.js_editor = function (p) {
                 }
             });
         });
+
+         // 🖐 근처에 편집할 점이 없으면 → 이미지 전체를 드래그(팬)하는 모드로 전환
+        if (
+            dragging.poly === null &&
+            !window.add_mode &&
+            !e.ctrlKey && !e.shiftKey && !e.altKey
+        ) {
+            const pidx = findPolyIndexAt(mx, my);
+
+            if (pidx !== -1) {
+                // 🔷 폴리곤 내부 클릭 → 전체 이동
+                window.history_stack.push(JSON.stringify({
+                    pts_list: window.pts_list,
+                    new_polygon: window.new_polygon,
+                    add_mode: window.add_mode
+                }));
+                window.redo_stack = [];
+
+                window._dragging_polygon = pidx;
+                window._polygon_drag_start = {
+                    x: mx, y: my,
+                    points: JSON.parse(JSON.stringify(window.pts_list[pidx].pts))
+                };
+                canvas.style.cursor = "move";
+            } else {
+                // 🖐 빈 공간 → 이미지 팬
+                window._is_panning = true;
+                window._pan_start = {
+                    x: e.clientX,
+                    y: e.clientY,
+                    offsetX: window.canvas_offset.x,
+                    offsetY: window.canvas_offset.y
+                };
+                canvas.style.cursor = "grabbing";
+            }
+        }
     };
 
-    document.addEventListener("keydown", (e) => {
+    document.onkeydown = (e) => {
+        // ⏎ ENTER → New Polygon 작업 중일 때만 Finish Polygon 실행
+        if (e.key === "Enter") {
+            const tag = (e.target.tagName || "").toLowerCase();
+            const isTyping = tag === "input" || tag === "textarea" || tag === "select";
+            if (!isTyping && window.add_mode && window.new_polygon.length >= 3) {
+                e.preventDefault();
+                document.getElementById("finish_poly_btn_el")?.click();
+                return;
+            }
+        }
+
         //🟥DELETE → 선택된 폴리곤 삭제
         if (e.key === "Delete" && window.selected_poly !== null) {
             //Undo를위한 현재 상태 저장
@@ -493,20 +549,51 @@ window.js_editor = function (p) {
         }
     }
 
-    });
+    };
+
     canvas.onmousemove = (e) => {
+        // 🔷 폴리곤 전체 이동 모드
+        if (window._dragging_polygon !== null) {
+            const rect = canvas.getBoundingClientRect();
+            const mx = (e.clientX - rect.left) / window.canvas_scale;
+            const my = (e.clientY - rect.top) / window.canvas_scale;
+            const dx = mx - window._polygon_drag_start.x;
+            const dy = my - window._polygon_drag_start.y;
+            const orig = window._polygon_drag_start.points;
+
+            window.pts_list[window._dragging_polygon].pts =
+                orig.map(p => ({ x: p.x + dx, y: p.y + dy }));
+            draw_all();
+            return;
+        }
+
+        // 🖐 팬 모드일 때는 캔버스 위치만 이동시키고 종료
+        if (window._is_panning) {
+            const dx = e.clientX - window._pan_start.x;
+            const dy = e.clientY - window._pan_start.y;
+            window.canvas_offset.x = window._pan_start.offsetX + dx;
+            window.canvas_offset.y = window._pan_start.offsetY + dy;
+            window.applyCanvasTransform && window.applyCanvasTransform();
+            return;
+        }
+
         if (dragging.poly === null) return;
         const rect = canvas.getBoundingClientRect();
-        window.pts_list[dragging.poly].pts[dragging.idx].x = e.clientX - rect.left;
-        window.pts_list[dragging.poly].pts[dragging.idx].y = e.clientY - rect.top;
-
+        window.pts_list[dragging.poly].pts[dragging.idx].x = (e.clientX - rect.left) / window.canvas_scale;
+        window.pts_list[dragging.poly].pts[dragging.idx].y = (e.clientY - rect.top) / window.canvas_scale;
         draw_all();
     };
-    canvas.onmouseup = () => {
+
+    // 🖐 마우스를 캔버스 밖에서 놓쳐도 확실히 멈추도록 window에 등록
+    window.addEventListener("mouseup", () => {
         dragging.poly = null;
         dragging.idx = null;
-        draw_all();   // ← 이 줄이 핵심!!
-    };
+
+        window._is_panning = false;
+        window._dragging_polygon = null;
+        window._polygon_drag_start = null;
+        canvas.style.cursor = "default";
+    });
 
 
     finish_poly=function (cls_value)  {
@@ -658,3 +745,49 @@ window.reset_editor = function () {
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 };
+
+
+// ==== Ctrl + 마우스 휠 캔버스 확대/축소 ====
+(function() {
+    if (window._canvas_zoom_bound) return;
+    window._canvas_zoom_bound = true;
+
+    window.canvas_scale = window.canvas_scale || 1;
+    window.canvas_offset = window.canvas_offset || { x: 0, y: 0 };
+
+    function applyTransform() {
+        const c = document.getElementById("edit_canvas");
+        if (!c) return;
+        c.style.transform =
+            `translate(${window.canvas_offset.x}px, ${window.canvas_offset.y}px) scale(${window.canvas_scale})`;
+    }
+    window.applyCanvasTransform = applyTransform;
+
+    window.addEventListener("wheel", (e) => {
+        if (!e.ctrlKey) return;
+
+        const container = document.getElementById("edit_canvas_container");
+        if (!container) return;
+        if (!container.contains(e.target)) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const canvas = document.getElementById("edit_canvas");
+        if (!canvas) return;
+
+        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+        const oldScale = window.canvas_scale;
+        const newScale = Math.min(Math.max(oldScale * zoomFactor, 0.2), 5);
+
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        window.canvas_offset.x -= mx * (newScale / oldScale - 1);
+        window.canvas_offset.y -= my * (newScale / oldScale - 1);
+        window.canvas_scale = newScale;
+
+        applyTransform();
+    }, { passive: false, capture: true });
+})();

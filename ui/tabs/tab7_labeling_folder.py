@@ -12,6 +12,7 @@ from ui.shared.js_assets import save_polygons_for_editor_from_seg_txt
 from ui.tabs._ui_shared import build_markdown_log_box, build_log_textbox
 from core.config import PROJECT_ROOT
 from core.utilities import build_folder_picker
+from ui.tabs.tab7_labeling_canvas import build_tab7_labeling_canvas
 
 
 def load_classes_txt(classes_file):
@@ -230,7 +231,7 @@ def save_current_overwrite(cur_index, file_list, case_paths, current_json):
 
 
 def build_tab7_labeling_folder(current_tab: gr.State):
-    ''' UI 컴포넌트 관련 '''
+    ''' 상단: base 경로 / classes.txt / Load 버튼 — 가로로 길게 '''
     with gr.Row():
         with gr.Column(scale=1):
             gr.Markdown("### base 경로 선택하기")
@@ -240,85 +241,71 @@ def build_tab7_labeling_folder(current_tab: gr.State):
                 default_path=PROJECT_ROOT,
             )
 
+        with gr.Column(scale=1):
             gr.Markdown("### classes.txt 파일 불러오기")
             classes_txt_file = gr.File(
                 label="Select classes.txt",
                 file_types=[".txt"]
             )
 
-        with gr.Column(scale=1):
-            js_log_box = build_log_textbox(label="JS Log", lines=18)
-
     with gr.Row():
-        load_btn = gr.Button(
-            "Load Folder case",
-            size="lg"
-        )
+        load_btn = gr.Button("Load Folder case", size="lg")
 
+    ''' 하단: 왼쪽 = 캔버스 슬롯 / 오른쪽 = 라벨링 도구 '''
     with gr.Row():
-        with gr.Column(scale=1):
-            gr.HTML("""
-            <div>
-                <h3>[단축키 & 조작 안내]</h3>
+        with gr.Column(scale=3, elem_id="folder-canvas-slot"):
+            build_tab7_labeling_canvas()
+            
+        with gr.Column(scale=2):
+            with gr.Accordion("[단축키 & 조작 안내]", open=False):
+                gr.HTML("""
                 <ul>
                     <li><b>Click + Drag</b> : 포인트 이동</li>
                     <li><b>Ctrl + Click</b> : 포인트 삭제</li>
                     <li><b>Shift + Click</b> : 포인트 추가</li>
                     <li><b>Ctrl + Z / Y</b> : Undo / Redo</li>
+                    <li><b>Enter</b> : New Polygon 작업 중 Finish Polygon 실행</li>
                     <li><b>Delete</b> : 폴리곤 선택 후 Delete 버튼으로 한 레이블 전체 삭제 가능</li>
                 </ul>
-            </div>
-            """)
+                """)
 
-            # NEW polygon controls : Class ID + 버튼 영역
             gr.HTML("새로운 폴리곤 추가 버튼을 눌러 레이블링을 추가하고, 레이블링 완료 후 finish 버튼을 눌러주세요.")
             with gr.Row():
                 with gr.Column(scale=2):
-                    new_class = gr.Dropdown(
-                        choices=[],
-                        label="Class ID",
-                        value=None
-                    )
-                    # 아래 칸용 dummy dropdown (높이 맞추기용)
-                    gr.Dropdown(
-                        choices=[],
-                        label="Class ID",
-                        visible=False
-                    )
+                    new_class = gr.Dropdown(choices=[], label="Class ID", value=None)
                 with gr.Column(scale=1):
                     add_mode_btn = gr.Button("➕ New Polygon")
-                    finish_poly_btn = gr.Button("✔ Finish Polygon")
+                    finish_poly_btn = gr.Button("✔ Finish Polygon", elem_id="finish_poly_btn_el")
 
             gr.HTML("레이블링 클래스 변경하기 - 폴리곤 선택 후 변경할 클래스를 선택하고 버튼을 클릭하세요.")
             with gr.Row():
                 with gr.Column(scale=2):
-                    selected_class = gr.Dropdown(
-                        choices=[],
-                        label="Selected Polygon Class",
-                        value=None
-                    )
+                    selected_class = gr.Dropdown(choices=[], label="Selected Polygon Class", value=None)
                 with gr.Column(scale=1):
                     apply_class_btn = gr.Button("🔄 Apply Class")
 
             gr.HTML("레이블링 수정 완료 후 저장하기 버튼을 눌러주세요")
-            save_btn = gr.Button(
-                "💾 Save (JSON + TXT overwrite)",
-                size="lg"
-            )
+            save_btn = gr.Button("💾 Save (JSON + TXT overwrite)", size="lg")
 
-    gr.Markdown("### 파일 이동하기")
-    with gr.Row():
-        prev_btn = gr.Button("⬅ Prev")
-        cur_file_text = build_log_textbox(label="Current file", lines=1)
+            gr.Markdown("### 파일 이동하기")
+            with gr.Row():
+                prev_btn = gr.Button("⬅ Prev")
+                next_btn = gr.Button("Next ➡")
+            cur_file_text = build_log_textbox(label="Current file", lines=1)
 
-        next_btn = gr.Button("Next ➡")
+            js_log_box = build_log_textbox(label="JS Log", lines=8)
 
-
-    ''' 상태 관련 '''
+    # ↓↓↓ 이 아래 State 정의 + 버튼 click 리스너 부분은
+    #     기존 코드 그대로 두시면 됩니다 (변경 불필요) ↓↓↓
     load_out = gr.JSON(visible=False)
     case_paths = gr.State({})
     file_list = gr.State([])
     cur_index = gr.State(0)
+
+    # ... build_class_dropdown, load_btn.click, add_mode_btn.click,
+    #     finish_poly_btn.click, apply_class_btn.click, prev_btn.click,
+    #     next_btn.click, save_btn.click, reset_folder_state 등
+    #     기존에 있던 리스너 코드 그대로 복붙
 
 
     ''' 버튼 클릭 리스너 및 ui 관련 함수 '''

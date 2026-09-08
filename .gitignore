@@ -2,36 +2,34 @@
 # Local experiments
 # =====================
 test_yolo_project/config/*
-test_yolo_project/tab2_datasets/*
+!test_yolo_project/config/sample.yaml
+!test_yolo_project/config/classes_sample.txt
+
+test_yolo_project/tab2_datasets/1_org_dataset/*
+!test_yolo_project/tab2_datasets/1_org_dataset/.gitkeep
+
+test_yolo_project/tab2_datasets/2_new_dataset/*
+!test_yolo_project/tab2_datasets/2_new_dataset/.gitkeep
+
+test_yolo_project/tab3_training_info/*
+!test_yolo_project/tab3_training_info/.gitkeep
+
+test_yolo_project/tab4_inference/*
+!test_yolo_project/tab4_inference/.gitkeep
+
 test_yolo_project/tab6_inf_results/*
+!test_yolo_project/tab6_inf_results/.gitkeep
 
-!test_yolo_project/config/sample.yaml
-!test_yolo_project/tab2_datasets/1_org_dataset
-!test_yolo_project/tab2_datasets/2_new_dataset
-!test_yolo_project/tab6_inf_results/20251201
-!test_yolo_project/tab6_inf_results/20251210
+test_yolo_project/tab6_datasets_for_labeling/*
+!test_yolo_project/tab6_datasets_for_labeling/.gitkeep
 
-!test_yolo_project/config/sample.yaml
-!test_yolo_project/tab2_datasets/1_org_dataset/**
-!test_yolo_project/tab2_datasets/2_new_dataset/**
-!test_yolo_project/tab6_inf_results/20251201/**
-!test_yolo_project/tab6_inf_results/20251210/**
+test_yolo_project/runs/*
+!test_yolo_project/runs/.gitkeep
 
-test_yolo_project/datasets
-test_yolo_project/runs
-test_yolo_project/tab3_training_info
-test_yolo_project/tab4_inference
-test_yolo_project/tab6_datasets_for_labeling
-test_yolo_project/tab7_inference
-test_yolo_project_/
-
-# =====================
-# Data & results
-# =====================
-datasets/
-datasets_for_labeling/
-runs/
-inf_results/
+# 코드 미참조 - 개인 임시 폴더/파일 (완전 제외)
+test_yolo_project/raw_dataset/
+test_yolo_project/hd_classes.txt
+test_yolo_project/tab1_image_viewer/
 
 # =====================
 # YOLO weights

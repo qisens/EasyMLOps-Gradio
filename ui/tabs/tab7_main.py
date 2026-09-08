@@ -3,7 +3,6 @@ import gradio as gr
 
 from ui.tabs.tab7_labeling import build_tab7_labeling
 from ui.tabs.tab7_labeling_folder import build_tab7_labeling_folder
-from ui.tabs.tab7_labeling_canvas import build_tab7_labeling_canvas
 from ui.shared.js_assets import load_all_js
 
 def build_tab7():
@@ -20,11 +19,9 @@ def build_tab7():
             with gr.Tab("Single File", id="single") as tab_single:
                 build_tab7_labeling(current_tab)
 
-        # 공통 캔버스 부분
-        build_tab7_labeling_canvas()
-
         bind_tab_reset(tab_folder, "folder", current_tab)
         bind_tab_reset(tab_single, "single", current_tab)
+
 
 def bind_tab_reset(tab, tab_name, current_tab):
     tab.select(

@@ -28,7 +28,7 @@ UPLOAD_NEWDATASET_ROOT = os.path.join(PROJECT_ROOT, "tab2_datasets")
 
 # tab3
 UPLOAD_TRAINING_INFO_DIR = os.path.join(PROJECT_ROOT, "tab3_training_info")
-YOLO_CLI = "/home/gpuadmin/anaconda3/envs/gradio_jeeeun/bin/yolo"    # YOLO 가상환경 경로로 바꿔주기
+YOLO_CLI = "/home/qisens/miniconda3/envs/easymlops_AHJ/bin/yolo"    # YOLO 가상환경 경로로 바꿔주기
 RUNS_DIR = os.path.join(PROJECT_ROOT, "runs")
 METRIC_COLUMNS = [
     "metrics/mAP50-95(B)", "metrics/mAP50(B)",

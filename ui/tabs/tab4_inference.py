@@ -397,12 +397,13 @@ def build_inference_tab(
         for fname in state["bad_images"]:
             src_img = os.path.join(orig_dir, fname)
             dst_img = os.path.join(save_img_dir, fname)
-
-            txt_fname = fname.replace(".jpg", ".txt")
+	   
+            stem = os.path.splitext(fname)[0]
+            txt_fname = stem + ".txt"
             src_txt = os.path.join(labels_dir, txt_fname)
             dst_txt = os.path.join(save_txt_dir, txt_fname)
 
-            json_fname = fname.replace(".jpg", ".json")
+            json_fname = stem + ".json"
             dst_json = os.path.join(save_json_dir, json_fname)
 
             if not os.path.exists(src_img):

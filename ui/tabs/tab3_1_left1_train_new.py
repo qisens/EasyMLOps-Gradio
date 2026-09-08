@@ -60,6 +60,7 @@ def build_train_new(
                                       info="VRAM OOM 에러 방지를 위해 하단의 'Batch 최적화' 스캔 권장")
             monitor_lr0 = gr.Number(label="lr0", value=0.001,
                                     info="권장: 0.001 (AdamW 옵티마이저 기준)")
+            monitor_device = gr.Textbox(label="device (GPU 번호)", value="0", info="예 : 0 (단일 GPU) / 0,1 (멀티 GPU)")
 
 
         with gr.Row():
@@ -97,6 +98,7 @@ def build_train_new(
                 monitor_epochs,
                 monitor_batch,
                 monitor_lr0,
+                monitor_device,
             ],
             outputs=[train_log_message_state, epoch_tick, results_csv_path],
         )
@@ -154,11 +156,8 @@ def auto_recommend_batch(imgsz):
 def has_conf(parts):
     if len(parts) < 3:
         return False
-    try:
-        conf = float(parts[1])
-        return 0.0 <= conf <= 1.0
-    except:
-        return False
+    # 숫자 개수가 짝수면 conf 포함(class+conf+짝수개좌표), 홀수면 정상(class+짝수개좌표)
+    return len(parts) % 2 == 0
 
 
 def sanitize_segmentation_labels(data_yaml_path):
